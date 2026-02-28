@@ -124,6 +124,23 @@ public class CustomerService {
 
         addressRepository.deleteAddress(addressId);
     }
+    @Transactional
+    public UUID createAddress(UUID customerId, AddressRequest request) {
+
+        UUID addressId = UUID.randomUUID();
+
+        if (Boolean.TRUE.equals(request.getIsDefault())) {
+            addressRepository.unsetDefaultAddress(customerId);
+        }
+
+        addressRepository.insertAddress(
+                addressId,
+                customerId,
+                request
+        );
+
+        return addressId;
+    }
 
 
 

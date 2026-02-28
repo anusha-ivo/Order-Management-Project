@@ -26,7 +26,13 @@ public class ControllerClass {
     public void updateCustomer(@PathVariable UUID customerId,@RequestBody CustomerRequest request){
         customerService.updateCustomer(customerId,request);
     }
-    @PostMapping("/{customerId}/address")
+    @PostMapping("/{customerId}/addresses")
+    public UUID createAddress(@PathVariable UUID customerId,
+                              @RequestBody AddressRequest request) {
+
+        return customerService.createAddress(customerId, request);
+    }
+    @PostMapping("/{customerId}/{addressId}/address")
     public void address(@PathVariable UUID customerId, @PathVariable UUID addressId, @RequestBody AddressRequest request){
         customerService.updateAddress(customerId,addressId,request);
     }
