@@ -3,10 +3,12 @@ package com.ordermanagement.product_service.controller;
 import com.ordermanagement.product_service.services.InventoryService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@RequestMapping("/inventory")
 public class InventoryController {
     private final InventoryService inventoryService;
     InventoryController(InventoryService inventoryService){

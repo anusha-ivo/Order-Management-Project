@@ -33,8 +33,7 @@ public class ProductRepository {
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         jdbcTemplate.update(connection -> {
-            PreparedStatement ps =
-                    connection.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS);
+            PreparedStatement ps = connection.prepareStatement(insertQuery, new String[]{"product_id"});
 
             ps.setString(1, product.getStockKeepingUnit());
             ps.setString(2, product.getName());
