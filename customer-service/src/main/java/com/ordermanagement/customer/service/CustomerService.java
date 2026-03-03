@@ -10,6 +10,7 @@ import com.ordermanagement.customer.exceptions.DuplicateResourceException;
 import com.ordermanagement.customer.exceptions.InvalidOperationException;
 import com.ordermanagement.customer.repository.AddressRepository;
 import com.ordermanagement.customer.repository.CustomerRepository;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,7 +29,8 @@ public class CustomerService {
     }
 
     @Transactional
-    public CustomerResponse createCustomer(CustomerRequest request) throws DuplicateResourceException {
+    public CustomerResponse createCustomer(CustomerRequest request)
+            throws DuplicateResourceException, CustomerNotFound {
 
         if (customerRepository.existsByEmail(request.getEmail())) {
             throw new DuplicateResourceException("Email already exists");
@@ -49,29 +51,63 @@ public class CustomerService {
             );
         }
 
-
         long customerId = customerRepository.insertCustomer(
                 request.getName(),
                 request.getEmail(),
                 request.getPhone()
         );
 
-
         for (AddressRequest addressRequest : request.getAddress()) {
             addressRepository.insertAddress(customerId, addressRequest);
         }
 
-         return customerRepository.findById(customerId);
+        return getCustomer(customerId);
     }
 
     @Transactional
-    public void deleteCustomer(long customerId) throws CustomerNotFound {
+    public CustomerResponse deleteCustomer(long customerId)
+            throws CustomerNotFound {
+
         validateCustomerExists(customerId);
+
+        CustomerResponse response = getCustomer(customerId);
+
         customerRepository.deleteCustomer(customerId);
+
+        return response;
     }
 
     @Transactional
-    public void addAddress(long customerId, AddressRequest request) throws CustomerNotFound {
+    public CustomerResponse updateCustomer(long customerId,
+                                           CustomerRequest request)
+            throws CustomerNotFound, DuplicateResourceException {
+
+        validateCustomerExists(customerId);
+
+        if (customerRepository.existsByEmailForOtherCustomer(
+                request.getEmail(), customerId)) {
+            throw new DuplicateResourceException("Email already exists");
+        }
+
+        if (customerRepository.existsByPhoneForOtherCustomer(
+                request.getPhone(), customerId)) {
+            throw new DuplicateResourceException("Phone already exists");
+        }
+
+        customerRepository.updateCustomer(
+                customerId,
+                request.getName(),
+                request.getEmail(),
+                request.getPhone()
+        );
+
+        return getCustomer(customerId);
+    }
+
+    @Transactional
+    public CustomerResponse createAddress(long customerId,
+                                          AddressRequest request)
+            throws CustomerNotFound {
 
         validateCustomerExists(customerId);
 
@@ -80,10 +116,15 @@ public class CustomerService {
         }
 
         addressRepository.insertAddress(customerId, request);
+
+        return getCustomer(customerId);
     }
 
     @Transactional
-    public void updateAddress(long customerId, long addressId, AddressRequest request) throws CustomerNotFound, AddressNotFoundException {
+    public CustomerResponse updateAddress(long customerId,
+                                          long addressId,
+                                          AddressRequest request)
+            throws CustomerNotFound, AddressNotFoundException {
 
         validateCustomerExists(customerId);
         validateAddressExists(customerId, addressId);
@@ -93,10 +134,14 @@ public class CustomerService {
         }
 
         addressRepository.updateAddress(addressId, customerId, request);
+
+        return getCustomer(customerId);
     }
 
     @Transactional
-    public void deleteAddress(long customerId, long addressId) throws CustomerNotFound, AddressNotFoundException {
+    public CustomerResponse deleteAddress(long customerId,
+                                          long addressId)
+            throws CustomerNotFound, AddressNotFoundException {
 
         validateCustomerExists(customerId);
         validateAddressExists(customerId, addressId);
@@ -111,55 +156,13 @@ public class CustomerService {
         }
 
         addressRepository.deleteAddress(addressId);
+
+        return getCustomer(customerId);
     }
 
-    private void validateCustomerExists(long customerId) throws CustomerNotFound {
-        if (!customerRepository.existsById(customerId)) {
-            throw new CustomerNotFound(customerId);
-        }
-    }
-
-    private void validateAddressExists(long customerId, long addressId) throws AddressNotFoundException {
-        if (!addressRepository.existsByIdAndCustomerId(addressId, customerId)) {
-            throw new AddressNotFoundException(addressId);
-        }
-    }
-    @Transactional
-    public void updateCustomer(long customerId, CustomerRequest request) throws CustomerNotFound, DuplicateResourceException {
-
-        validateCustomerExists(customerId);
-
-        if (customerRepository.existsByEmailForOtherCustomer(
-                request.getEmail(), customerId)) {
-            throw new DuplicateResourceException("Email already exists");
-        }
-
-        if (customerRepository.existsByPhoneForOtherCustomer(
-                request.getPhone(), customerId)) {
-            throw new DuplicateResourceException("phone already exists");
-        }
-
-        customerRepository.updateCustomer(
-                customerId,
-                request.getName(),
-                request.getEmail(),
-                request.getPhone()
-        );
-    }
-    @Transactional
-    public long createAddress(long customerId, AddressRequest request) throws CustomerNotFound {
-
-        validateCustomerExists(customerId);
-
-        if (Boolean.TRUE.equals(request.getIsDefault())) {
-            addressRepository.unsetDefaultAddress(customerId);
-        }
-
-        // If your AddressRepository.insertAddress returns ID
-        return addressRepository.insertAddress(customerId, request);
-    }
     @Transactional(readOnly = true)
-    public CustomerResponse getCustomer(long customerId) throws CustomerNotFound {
+    public CustomerResponse getCustomer(long customerId)
+            throws CustomerNotFound {
 
         validateCustomerExists(customerId);
 
@@ -171,5 +174,22 @@ public class CustomerService {
         customer.setAddresses(addresses);
 
         return customer;
+    }
+
+    private void validateCustomerExists(long customerId)
+            throws CustomerNotFound {
+
+        if (!customerRepository.existsById(customerId)) {
+            throw new CustomerNotFound(customerId);
+        }
+    }
+
+    private void validateAddressExists(long customerId,
+                                       long addressId)
+            throws AddressNotFoundException {
+
+        if (!addressRepository.existsByIdAndCustomerId(addressId, customerId)) {
+            throw new AddressNotFoundException(addressId);
+        }
     }
 }

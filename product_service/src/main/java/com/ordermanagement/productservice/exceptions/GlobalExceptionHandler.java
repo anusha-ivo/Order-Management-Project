@@ -1,4 +1,4 @@
-package com.ordermanagement.customer.exceptions;
+package com.ordermanagement.productservice.exceptions;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -7,9 +7,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestControllerAdvice
-public class GlobalHandler {
+public class GlobalExceptionHandler {
 
-    private static final String SOURCE_APP = "AUTH-IRIS";
+    private static final String SOURCE_APP = "PRODUCT-SERVICE";
 
     private Map<String, Object> buildError(
             String label,
@@ -29,13 +29,14 @@ public class GlobalHandler {
         );
     }
 
-    @ExceptionHandler(CustomerNotFound.class)
-    public ResponseEntity<?> handleCustomerNotFound(CustomerNotFound ex) {
+    @ExceptionHandler(ProductNotFoundException.class)
+    public ResponseEntity<?> handleProductNotFound(ProductNotFoundException ex) {
 
         HttpStatus status = HttpStatus.NOT_FOUND;
 
         return new ResponseEntity<>(
-                buildError("Not Found", status,
+                buildError("Not Found",
+                        status,
                         ex.getMessage(),
                         "REQUEST",
                         "NONFATAL"),
@@ -43,41 +44,14 @@ public class GlobalHandler {
         );
     }
 
-    @ExceptionHandler(AddressNotFoundException.class)
-    public ResponseEntity<?> handleAddressNotFound(AddressNotFoundException ex) {
-
-        HttpStatus status = HttpStatus.NOT_FOUND;
-
-        return new ResponseEntity<>(
-                buildError("Not Found", status,
-                        ex.getMessage(),
-                        "REQUEST",
-                        "NONFATAL"),
-                status
-        );
-    }
-
-    @ExceptionHandler(DuplicateResourceException.class)
-    public ResponseEntity<?> handleDuplicate(DuplicateResourceException ex) {
-
-        HttpStatus status = HttpStatus.CONFLICT;
-
-        return new ResponseEntity<>(
-                buildError("Conflict", status,
-                        ex.getMessage(),
-                        "REQUEST",
-                        "NONFATAL"),
-                status
-        );
-    }
-
-    @ExceptionHandler(InvalidOperationException.class)
-    public ResponseEntity<?> handleInvalidOperation(InvalidOperationException ex) {
+    @ExceptionHandler(InsufficientStockException.class)
+    public ResponseEntity<?> handleStockException(InsufficientStockException ex) {
 
         HttpStatus status = HttpStatus.BAD_REQUEST;
 
         return new ResponseEntity<>(
-                buildError("Bad Request", status,
+                buildError("Bad Request",
+                        status,
                         ex.getMessage(),
                         "REQUEST",
                         "NONFATAL"),
@@ -86,12 +60,13 @@ public class GlobalHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<?> handleGeneric(Exception ex) {
+    public ResponseEntity<?> handleGeneralException(Exception ex) {
 
         HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
 
         return new ResponseEntity<>(
-                buildError("Internal Server Error", status,
+                buildError("Internal Server Error",
+                        status,
                         "Something went wrong",
                         "SYSTEM",
                         "FATAL"),
