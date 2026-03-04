@@ -1,18 +1,15 @@
 package com.ordermanagement.order.service.services;
 
+import com.ordermanagement.order.service.dto.*;
 import com.ordermanagement.order.service.exceptions.ResourceNotFoundException;
-import com.ordermanagement.order.service.dto.CreateOrderRequest;
-import com.ordermanagement.order.service.dto.Order;
-import com.ordermanagement.order.service.dto.OrderItem;
-import com.ordermanagement.order.service.dto.OrderItemRequest;
 import com.ordermanagement.order.service.repository.OrderRepository;
-import lombok.RequiredArgsConstructor;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
-import tools.jackson.databind.ObjectMapper;
+
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -60,33 +57,68 @@ public class OrderService {
         order.setTotalAmount(BigDecimal.ZERO);
         Long orderId = orderRepository.insertOrder(order);
         for (OrderItemRequest itemRequest : request.getItems()) {
-            BigDecimal price = new BigDecimal("1000");
+            String productUrl = productServiceUrl + "/products/" + itemRequest.getProductId();
+            ProductResponse product = restTemplate.getForObject(productUrl, ProductResponse.class);
+
+            if (product == null || !"ACTIVE".equals(product.getStatus())) {
+                throw new ResourceNotFoundException("Product not found or inactive: " + itemRequest.getProductId());
+            }
+
+            BigDecimal price = product.getPrice();  // get real price
             BigDecimal lineTotal = price.multiply(BigDecimal.valueOf(itemRequest.getQuantity()));
             OrderItem item = new OrderItem();
             item.setOrderId(orderId);
             item.setProductId(itemRequest.getProductId());
-            item.setProductNameSnapshot("Sample Product");
+            item.setProductNameSnapshot(product.getName());
             item.setUnitPriceSnapshot(price);
             item.setQuantity(itemRequest.getQuantity());
             item.setLineTotal(lineTotal);
             totalAmount = totalAmount.add(lineTotal);
-            orderRepository.updateTotalAmount(orderId, totalAmount);
+
             orderRepository.saveOrderItem(item);
 
         }
+    orderRepository.updateTotalAmount(orderId, totalAmount);
+
     return orderId;
 
     }
-    public void confirmOrder(Long orderId){
-        Order order=orderRepository.findById(orderId);
+    @Transactional
+    public void confirmOrder(Long orderId) {
+        Order order = orderRepository.findById(orderId);
         if (order == null) {
             throw new ResourceNotFoundException("Order not found with id " + orderId);
         }
         if (!"CREATED".equals(order.getStatus())) {
-            throw new IllegalStateException("Only CREATED orders can be confirmed"); }
-        Long paymentId = 100L;
-        orderRepository.updatePayment(orderId,paymentId);
-        orderRepository.updateStatus(orderId,"CONFIRMED");
+            throw new IllegalStateException("Only CREATED orders can be confirmed");
+        }
+        PaymentRequest paymentRequest = new PaymentRequest();
+        paymentRequest.setAmount(order.getTotalAmount());
+        paymentRequest.setOrderId(orderId);
+        paymentRequest.setCurrency(order.getCurrency());
+        paymentRequest.setMethod("UPI");
+        paymentRequest.setIdempotencyKey("ORDER_" + orderId);
+        PaymentResponse paymentResponse =
+                restTemplate.postForObject(
+                        paymentServiceUrl + "/payments",
+                        paymentRequest,
+                        PaymentResponse.class
+                );
+        if (paymentResponse == null || paymentResponse.getPaymentId() == null) {
+            throw new RuntimeException("Payment failed for order " + orderId);
+        }
+        orderRepository.updatePayment(orderId, paymentResponse.getPaymentId());
+        for (OrderItem item : orderRepository.findItemsByOrderId(orderId)) {
+            String url = productServiceUrl + "/inventory/deduct?productId="
+                        + item.getProductId()
+                        + "&quantity=" + item.getQuantity();
+
+                restTemplate.postForObject(url, null, Void.class);
+            }
+
+
+            orderRepository.updateStatus(orderId, "CONFIRMED");
+
     }
     @Transactional
     public void cancelOrder(Long orderId) {
@@ -101,11 +133,27 @@ public class OrderService {
         }
 
         if ("CONFIRMED".equals(order.getStatus())) {
-            // Refund payment do intigration ..next
-            // Restore inventory nxt
-        }
 
-        orderRepository.updateStatus(orderId, "CANCELLED");
+
+            if (order.getPaymentId() != null) {
+                restTemplate.postForObject(
+                        paymentServiceUrl + "/payments/" + order.getPaymentId() + "/refund",
+                        null,
+                        Void.class
+                );
+            }
+
+
+            for (OrderItem item : orderRepository.findItemsByOrderId(orderId)) {
+                String url = productServiceUrl + "/inventory/restore?productId="
+                        + item.getProductId()
+                        + "&quantity=" + item.getQuantity();
+
+                restTemplate.postForObject(url, null, Void.class);
+            }
+
+            orderRepository.updateStatus(orderId, "CANCELLED");
+        }
     }
     public Order getOrder(Long orderId) {
 

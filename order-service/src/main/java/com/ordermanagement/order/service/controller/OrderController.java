@@ -22,7 +22,7 @@ public class OrderController {
         this.service = service;
     }
 
-    // CREATE ORDER
+
     @PostMapping
     public ResponseEntity<Order> createOrder(
             @Valid @RequestBody CreateOrderRequest request) throws Exception {
@@ -34,7 +34,7 @@ public class OrderController {
         return new ResponseEntity<>(order, HttpStatus.CREATED);
     }
 
-    // CONFIRM ORDER
+
     @PostMapping("/{id}/confirm")
     public ResponseEntity<Order> confirmOrder(@PathVariable Long id) {
 
@@ -45,7 +45,7 @@ public class OrderController {
         return ResponseEntity.ok(order);
     }
 
-    // CANCEL ORDER
+
     @PostMapping("/{id}/cancel")
     public ResponseEntity<Order> cancelOrder(@PathVariable Long id) {
 
@@ -56,7 +56,7 @@ public class OrderController {
         return ResponseEntity.ok(order);
     }
 
-    // GET ORDER WITH ITEMS
+
     @GetMapping("/{id}")
     public ResponseEntity<OrderResponse> getOrder(@PathVariable Long id) {
 

@@ -22,6 +22,7 @@ public class ProductService {
 
 public Product createProduct(Product product, Integer initialStock) {
     Long productId = productRepository.create(product);
+    product.setProductId(productId);
     inventoryRepository.createInitialStock(productId, initialStock);
 
     return product;

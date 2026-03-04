@@ -32,7 +32,6 @@ public class ProductRepository {
 
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(insertQuery, new String[]{"product_id"});
-
             ps.setString(1, product.getStockKeepingUnit());
             ps.setString(2, product.getName());
             ps.setString(3, product.getDescription());
@@ -42,7 +41,8 @@ public class ProductRepository {
             return ps;
         }, keyHolder);
 
-        return keyHolder.getKey().longValue();
+        Number key = keyHolder.getKey();
+        return key != null ? key.longValue() : null;
     }
     public Optional<Product> findById(Long id) {
 

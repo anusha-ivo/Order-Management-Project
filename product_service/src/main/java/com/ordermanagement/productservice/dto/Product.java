@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class Product {
 
-    private Long productId;   // assuming you switched to Long
+    private Long productId;
 
     @NotBlank
     private String stockKeepingUnit;
