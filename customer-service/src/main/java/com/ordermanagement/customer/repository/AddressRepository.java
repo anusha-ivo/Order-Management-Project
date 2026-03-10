@@ -105,7 +105,7 @@ public class AddressRepository {
         jdbcTemplate.update(deleteQuery, addressId);
     }
 
-    public boolean existsByIdAndCustomerId(long addressId, long customerId) {
+    public boolean existsByIdAndCustomerId(long addressId, long customerId) {//check address is present or not before dlt,update so we need this method
 
         Integer count = jdbcTemplate.queryForObject(
                 existsQuery,

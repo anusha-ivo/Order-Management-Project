@@ -122,7 +122,7 @@ public class CustomerRepository {
                     c.setEmail(rs.getString("email"));
                     c.setPhone(rs.getString("phone"));
 
-                    // SAFE timestamp handling
+
                     if (rs.getTimestamp("created_at") != null) {
                         c.setCreatedAt(
                                 rs.getTimestamp("created_at").toLocalDateTime()
