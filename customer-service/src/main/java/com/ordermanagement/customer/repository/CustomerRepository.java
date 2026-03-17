@@ -1,5 +1,6 @@
 package com.ordermanagement.customer.repository;
 
+import com.ordermanagement.customer.config.SqlQueryProvider;
 import com.ordermanagement.customer.dto.CustomerResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -14,41 +15,17 @@ import java.sql.PreparedStatement;
 public class CustomerRepository {
 
     private final JdbcTemplate jdbcTemplate;
+    private final SqlQueryProvider sqlQueryProvider;
 
-    public CustomerRepository(JdbcTemplate jdbcTemplate){
+    public CustomerRepository(JdbcTemplate jdbcTemplate,SqlQueryProvider sqlQueryProvider){
         this.jdbcTemplate = jdbcTemplate;
+        this.sqlQueryProvider=sqlQueryProvider;
     }
-
-    @Value("${customer.insert}")
-    private String insertQuery;
-
-    @Value("${customer.exists-email}")
-    private String existsEmailQuery;
-
-    @Value("${customer.exists-phone}")
-    private String existsPhoneQuery;
-
-    @Value("${customer.update}")
-    private String updateQuery;
-
-    @Value("${customer.delete}")
-    private String deleteQuery;
-
-    @Value("${customer.exists-email-other}")
-    private String existsEmailOtherQuery;
-
-    @Value("${customer.exists-phone-other}")
-    private String existsPhoneOtherQuery;
-
-    @Value("${customer.exists-id}")
-    private String existsIdQuery;
-
-
-
 
     public long insertCustomer(String name, String email, String phone) {
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
+         String insertQuery=sqlQueryProvider.getQuery("customer.insert");
 
         jdbcTemplate.update(
                 con -> {
@@ -69,29 +46,36 @@ public class CustomerRepository {
         if (phone == null || phone.isBlank()) {
             return false;
         }
+        String existsPhoneQuery = sqlQueryProvider.getQuery("customer.exists-phone");
         Integer count = jdbcTemplate.queryForObject(existsPhoneQuery, Integer.class, phone);
         return count != null && count > 0;
     }
 
     public boolean existsByEmail(String email) {
+        String existsEmailQuery = sqlQueryProvider.getQuery("customer.exists-email");
         Integer count = jdbcTemplate.queryForObject(existsEmailQuery, Integer.class, email);
         return count != null && count > 0;
     }
 
     public void updateCustomer(long customerId, String name, String email, String phone) {
+        String updateQuery = sqlQueryProvider.getQuery("customer.update");
         jdbcTemplate.update(updateQuery, name, email, phone, customerId);
     }
 
     public void deleteCustomer(long customerId) {
+        String deleteQuery= sqlQueryProvider.getQuery("customer.delete");
         jdbcTemplate.update(deleteQuery, customerId);
     }
 
     public boolean existsByEmailForOtherCustomer(String email, long customerId) {
+        String existsEmailOtherQuery= sqlQueryProvider.getQuery("customer.exists-email-other");
+
         Integer count = jdbcTemplate.queryForObject(existsEmailOtherQuery, Integer.class, email, customerId);
         return count != null && count > 0;
     }
 
     public boolean existsByPhoneForOtherCustomer(String phone, long customerId) {
+        String existsPhoneOtherQuery= sqlQueryProvider.getQuery("customer.exists-phone-other");
         if (phone == null || phone.isBlank()) {
             return false;
         }
@@ -99,6 +83,7 @@ public class CustomerRepository {
         return count != null && count > 0;
     }
     public boolean existsById(long customerId) {
+        String  existsIdQuery = sqlQueryProvider.getQuery("customer.exists-id");
         Integer count = jdbcTemplate.queryForObject(
                 existsIdQuery,
                 Integer.class,
@@ -106,10 +91,10 @@ public class CustomerRepository {
         );
         return count != null && count > 0;
     }
-    @Value("${customer.find-by-id}")
-    private String findByIdQuery;
+
 
     public CustomerResponse findById(long customerId) {
+        String  findByIdQuery = sqlQueryProvider.getQuery("customer.find-by-id");
 
         return jdbcTemplate.queryForObject(
                 findByIdQuery,

@@ -28,74 +28,44 @@ public class GlobalHandler {
                 "sourceApplication", SOURCE_APP
         );
     }
+    @ExceptionHandler(AppException.class)
+    public ResponseEntity<?> handleAppException(AppException ex) {
 
-    @ExceptionHandler(CustomerNotFound.class)
-    public ResponseEntity<?> handleCustomerNotFound(CustomerNotFound ex) {
-
-        HttpStatus status = HttpStatus.NOT_FOUND;
+        HttpStatus status = ex.getStatus();
 
         return new ResponseEntity<>(
-                buildError("Not Found", status,
+                buildError(
+                        ex.getLabel(),
+                        status,
                         ex.getMessage(),
                         "REQUEST",
-                        "NONFATAL"),
+                        "NONFATAL"
+                ),
                 status
         );
     }
-
-    @ExceptionHandler(AddressNotFoundException.class)
-    public ResponseEntity<?> handleAddressNotFound(AddressNotFoundException ex) {
-
-        HttpStatus status = HttpStatus.NOT_FOUND;
-
-        return new ResponseEntity<>(
-                buildError("Not Found", status,
-                        ex.getMessage(),
-                        "REQUEST",
-                        "NONFATAL"),
-                status
-        );
-    }
-
-    @ExceptionHandler(DuplicateResourceException.class)
-    public ResponseEntity<?> handleDuplicate(DuplicateResourceException ex) {
-
-        HttpStatus status = HttpStatus.CONFLICT;
-
-        return new ResponseEntity<>(
-                buildError("Conflict", status,
-                        ex.getMessage(),
-                        "REQUEST",
-                        "NONFATAL"),
-                status
-        );
-    }
-
-    @ExceptionHandler(InvalidOperationException.class)
-    public ResponseEntity<?> handleInvalidOperation(InvalidOperationException ex) {
-
-        HttpStatus status = HttpStatus.BAD_REQUEST;
-
-        return new ResponseEntity<>(
-                buildError("Bad Request", status,
-                        ex.getMessage(),
-                        "REQUEST",
-                        "NONFATAL"),
-                status
-        );
-    }
-
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleGeneric(Exception ex) {
+
+        ex.printStackTrace();
 
         HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
 
         return new ResponseEntity<>(
-                buildError("Internal Server Error", status,
+                buildError(
+                        "Internal Server Error",
+                        status,
                         "Something went wrong",
                         "SYSTEM",
-                        "FATAL"),
+                        "FATAL"
+                ),
                 status
         );
     }
 }
+
+
+
+
+
+

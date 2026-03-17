@@ -1,10 +1,15 @@
 package com.ordermanagement.customer.exceptions;
 
 
-    public class InvalidOperationException extends RuntimeException {
+import org.springframework.http.HttpStatus;
 
-        public InvalidOperationException(String message) {
-            super(message);
+public class InvalidOperationException extends AppException {
 
-        }
+    public InvalidOperationException(String message) {
+        super(
+                message,
+                HttpStatus.BAD_REQUEST,
+                "Bad Request"
+        );
     }
+}

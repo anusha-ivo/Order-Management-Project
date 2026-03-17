@@ -5,8 +5,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.PropertySource;
 
 @SpringBootApplication
-@PropertySource("classpath:address.sql.properties")
-@PropertySource("classpath:customer-sql.properties")
+
+@PropertySource("classpath:sql.properties")
 public class
 
 CustomerServiceApplication {

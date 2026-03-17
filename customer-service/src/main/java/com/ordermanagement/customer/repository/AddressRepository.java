@@ -1,5 +1,6 @@
 package com.ordermanagement.customer.repository;
 
+import com.ordermanagement.customer.config.SqlQueryProvider;
 import com.ordermanagement.customer.dto.AddressRequest;
 import com.ordermanagement.customer.dto.AddressResponse;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,34 +13,16 @@ import java.util.List;
 public class AddressRepository {
 
     private final JdbcTemplate jdbcTemplate;
+    private final SqlQueryProvider sqlQueryProvider;
 
-    public AddressRepository(JdbcTemplate jdbcTemplate) {
+    public AddressRepository(JdbcTemplate jdbcTemplate,SqlQueryProvider sqlQueryProvider) {
         this.jdbcTemplate = jdbcTemplate;
+        this.sqlQueryProvider=sqlQueryProvider;
     }
-
-    @Value("${address.insert}")
-    private String insertQuery;
-
-    @Value("${address.unset-default}")
-    private String unsetDefaultQuery;
-
-    @Value("${address.update}")
-    private String updateQuery;
-
-    @Value("${address.is-default}")
-    private String isDefaultQuery;
-
-    @Value("${address.count}")
-    private String countQuery;
-
-    @Value("${address.delete}")
-    private String deleteQuery;
-
-    @Value("${address.exists}")
-    private String existsQuery;
 
     public long insertAddress(long customerId,
                               AddressRequest addressRequest) {
+        String   insertQuery = sqlQueryProvider.getQuery("address.insert");
 
         jdbcTemplate.update(
                 insertQuery,
@@ -57,12 +40,14 @@ public class AddressRepository {
     }
 
     public void unsetDefaultAddress(long customerId) {
+        String unsetDefaultQuery = sqlQueryProvider.getQuery("address.unset-default");
         jdbcTemplate.update(unsetDefaultQuery, customerId);
     }
 
     public void updateAddress(long addressId,
                               long customerId,
                               AddressRequest request) {
+        String updateQuery = sqlQueryProvider.getQuery("address.update");
 
         jdbcTemplate.update(
                 updateQuery,
@@ -80,7 +65,7 @@ public class AddressRepository {
     }
 
     public boolean isDefaultAddress(long addressId) {
-
+        String isDefaultQuery= sqlQueryProvider.getQuery("address.is-default");
         Boolean result = jdbcTemplate.queryForObject(
                 isDefaultQuery,
                 Boolean.class,
@@ -91,7 +76,7 @@ public class AddressRepository {
     }
 
     public long countAddresses(long customerId) {
-
+        String countQuery = sqlQueryProvider.getQuery("address.count");
         Long count = jdbcTemplate.queryForObject(
                 countQuery,
                 Long.class,
@@ -101,12 +86,14 @@ public class AddressRepository {
         return count != null ? count : 0;
     }
 
-    public void deleteAddress(long addressId) {
+    public void deleteAddress(long addressId)
+    {
+        String deleteQuery = sqlQueryProvider.getQuery("address.delete");
         jdbcTemplate.update(deleteQuery, addressId);
     }
 
     public boolean existsByIdAndCustomerId(long addressId, long customerId) {//check address is present or not before dlt,update so we need this method
-
+        String existsQuery = sqlQueryProvider.getQuery("address.exists");
         Integer count = jdbcTemplate.queryForObject(
                 existsQuery,
                 Integer.class,
@@ -116,11 +103,10 @@ public class AddressRepository {
 
         return count != null && count > 0;
     }
-    @Value("${address.find-by-customer-id}")
-    private String findByCustomerIdQuery;
+
 
     public List<AddressResponse> findByCustomerId(long customerId) {
-
+        String  findByCustomerIdQuery = sqlQueryProvider.getQuery("address.find-by-customer-id");
         return jdbcTemplate.query(
                 findByCustomerIdQuery,
                 (rs, rowNum) -> {

@@ -29,8 +29,7 @@ public class CustomerService {
     }
 
     @Transactional
-    public CustomerResponse createCustomer(CustomerRequest request)
-            throws DuplicateResourceException, CustomerNotFound {
+    public CustomerResponse createCustomer(CustomerRequest request)  {
 
         if (customerRepository.existsByEmail(request.getEmail())) {
             throw new DuplicateResourceException("Email already exists");
@@ -39,7 +38,9 @@ public class CustomerService {
         if (customerRepository.existsByPhone(request.getPhone())) {
             throw new DuplicateResourceException("Phone already exists");
         }
-
+        if (request.getAddress() == null || request.getAddress().isEmpty()) {
+            throw new InvalidOperationException("At least one address is required");
+        }
         long defaultCount = request.getAddress()
                 .stream()
                 .filter(a -> Boolean.TRUE.equals(a.getIsDefault()))
@@ -83,14 +84,19 @@ public class CustomerService {
             throws CustomerNotFound, DuplicateResourceException {
 
         validateCustomerExists(customerId);
+        CustomerResponse existingCustomer = customerRepository.findById(customerId);
 
-        if (customerRepository.existsByEmailForOtherCustomer(
-                request.getEmail(), customerId)) {
+        if (!existingCustomer.getEmail().equals(request.getEmail()) &&
+                customerRepository.existsByEmailForOtherCustomer(
+                        request.getEmail(), customerId)) {
+
             throw new DuplicateResourceException("Email already exists");
         }
 
-        if (customerRepository.existsByPhoneForOtherCustomer(
-                request.getPhone(), customerId)) {
+        if (!existingCustomer.getPhone().equals(request.getPhone()) &&
+                customerRepository.existsByPhoneForOtherCustomer(
+                        request.getPhone(), customerId)) {
+
             throw new DuplicateResourceException("Phone already exists");
         }
 
