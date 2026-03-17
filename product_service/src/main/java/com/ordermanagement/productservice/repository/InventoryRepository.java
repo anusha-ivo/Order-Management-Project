@@ -1,5 +1,6 @@
 package com.ordermanagement.productservice.repository;
 
+import com.ordermanagement.productservice.config.SqlQueryProvider;
 import com.ordermanagement.productservice.dto.Inventory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -10,28 +11,22 @@ import java.util.Optional;
 
 @Repository
 public class InventoryRepository {
-    @Value("${inventory.insert}")
-    private String insertQuery;
-
-    @Value("${inventory.findById}")
-    private String findQuery;
-
-    @Value("${inventory.deduct}")
-    private String deductQuery;
-
-    @Value("${inventory.restore}")
-    private String restoreQuery;
-
     private final JdbcTemplate jdbcTemplate;
+    private final SqlQueryProvider sqlQueryProvider;
 
-    public InventoryRepository(JdbcTemplate jdbcTemplate) {
+    public InventoryRepository(JdbcTemplate jdbcTemplate,SqlQueryProvider sqlQueryProvider) {
         this.jdbcTemplate = jdbcTemplate;
+        this.sqlQueryProvider=sqlQueryProvider;
     }
 
     public void createInitialStock(Long productId, Integer qty) {
+        String insertQuery = sqlQueryProvider.getQuery("inventory.insert");
+
         jdbcTemplate.update(insertQuery, productId, qty);
     }
     public Optional<Inventory> findByProductId(Long productId) {
+
+        String findQuery = sqlQueryProvider.getQuery("inventory.findById");
 
         List<Inventory> list = jdbcTemplate.query(findQuery,
                 (rs, rowNum) -> {
@@ -50,9 +45,12 @@ public class InventoryRepository {
         return Optional.of(list.get(0));
     }
     public int deductStock(Long productId, Integer qty) {
+
+        String deductQuery = sqlQueryProvider.getQuery("inventory.deduct");
         return jdbcTemplate.update(deductQuery, qty, productId, qty);
     }
     public int restoreStock(Long productId, Integer qty) {
+        String restoreQuery = sqlQueryProvider.getQuery("inventory.restore");
         return jdbcTemplate.update(restoreQuery, qty, productId);
     }
 }

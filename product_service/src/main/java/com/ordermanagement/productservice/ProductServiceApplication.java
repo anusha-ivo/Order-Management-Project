@@ -6,9 +6,7 @@ import org.springframework.context.annotation.PropertySource;
 
 @SpringBootApplication
 
-@PropertySource("classpath:products.properties")
-
-@PropertySource("classpath:inventory.properties")
+@PropertySource("classpath:sql.properties")
 public class ProductServiceApplication {
 
 	public static void main(String[] args) {

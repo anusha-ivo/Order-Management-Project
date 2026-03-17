@@ -1,5 +1,6 @@
 package com.ordermanagement.productservice.repository;
 
+import com.ordermanagement.productservice.config.SqlQueryProvider;
 import com.ordermanagement.productservice.dto.Product;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -14,21 +15,17 @@ import java.util.Optional;
 @Repository
 public class ProductRepository {
     private final JdbcTemplate jdbcTemplate;
+    private final SqlQueryProvider sqlQueryProvider;
 
-    public ProductRepository(JdbcTemplate jdbcTemplate) {
+    public ProductRepository(JdbcTemplate jdbcTemplate,SqlQueryProvider sqlQueryProvider) {
         this.jdbcTemplate = jdbcTemplate;
+        this.sqlQueryProvider=sqlQueryProvider;
     }
-    @Value("${product.insert}")
-    public String insertQuery;
-    @Value("${product.findById}")
-    private String findByIdQuery;
-    @Value("${product.update}")
-    private String updateQuery;
-    @Value("${product.deactivate}")
-    private String deactivateQuery;
+
     public Long create(Product product) {
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
+        String insertQuery = sqlQueryProvider.getQuery("product.insert");
 
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(insertQuery, new String[]{"product_id"});
@@ -44,8 +41,9 @@ public class ProductRepository {
         Number key = keyHolder.getKey();
         return key != null ? key.longValue() : null;
     }
-    public Optional<Product> findById(Long id) {
+    public Optional<Product> findById(Long id) {//optional to value may or may not exist,to avaid null pointer xceptions
 
+        String findByIdQuery = sqlQueryProvider.getQuery("product.findById");
         List<Product> list = jdbcTemplate.query(findByIdQuery,
                 (rs, rowNum) -> {
                     Product p = new Product();
@@ -56,6 +54,13 @@ public class ProductRepository {
                     p.setPrice(rs.getBigDecimal("price"));
                     p.setCurrency(rs.getString("currency"));
                     p.setStatus(rs.getString("status"));
+                    if (rs.getTimestamp("created_at") != null) {
+                        p.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+                    }
+
+                    if (rs.getTimestamp("updated_at") != null) {
+                        p.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
+                    }
                     return p;
                 },
                 id
@@ -68,6 +73,7 @@ public class ProductRepository {
         return Optional.of(list.get(0));
     }
     public int update(Product product) {
+        String updateQuery = sqlQueryProvider.getQuery("product.update");
         return jdbcTemplate.update(updateQuery,
                 product.getStockKeepingUnit(),
                 product.getName(),
@@ -77,8 +83,11 @@ public class ProductRepository {
                 product.getProductId()
         );
     }
-    public int deactivate(Long id) {
+    public int deactivate(Long id)
+    {
+        String deactivateQuery = sqlQueryProvider.getQuery("product.deactivate");
         return jdbcTemplate.update(deactivateQuery, id);
     }
+
 
 }

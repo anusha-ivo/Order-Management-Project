@@ -51,8 +51,7 @@ public Product createProduct(Product product, Integer initialStock) {
 
         productRepository.update(product);
 
-        return productRepository.findById(product.getProductId())
-                .orElseThrow(() ->   new ProductNotFoundException(product.getProductId()));
+        return getProduct(product.getProductId());
 
 
     }

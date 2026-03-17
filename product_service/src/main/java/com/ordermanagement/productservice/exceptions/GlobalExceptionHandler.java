@@ -28,50 +28,44 @@ public class GlobalExceptionHandler {
                 "sourceApplication", SOURCE_APP
         );
     }
+    @ExceptionHandler(AppException.class)
+    public ResponseEntity<?> handleAppException(AppException ex) {
 
-    @ExceptionHandler(ProductNotFoundException.class)
-    public ResponseEntity<?> handleProductNotFound(ProductNotFoundException ex) {
-
-        HttpStatus status = HttpStatus.NOT_FOUND;
+        HttpStatus status = ex.getStatus();
 
         return new ResponseEntity<>(
-                buildError("Not Found",
+                buildError(
+                        ex.getLabel(),
                         status,
                         ex.getMessage(),
                         "REQUEST",
-                        "NONFATAL"),
+                        "NONFATAL"
+                ),
                 status
         );
     }
-
-    @ExceptionHandler(InsufficientStockException.class)
-    public ResponseEntity<?> handleStockException(InsufficientStockException ex) {
-
-        HttpStatus status = HttpStatus.BAD_REQUEST;
-
-        return new ResponseEntity<>(
-                buildError("Bad Request",
-                        status,
-                        ex.getMessage(),
-                        "REQUEST",
-                        "NONFATAL"),
-                status
-        );
-    }
-
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<?> handleGeneralException(Exception ex) {
+    public ResponseEntity<?> handleGeneric(Exception ex) {
+
         ex.printStackTrace();
 
         HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
 
         return new ResponseEntity<>(
-                buildError("Internal Server Error",
+                buildError(
+                        "Internal Server Error",
                         status,
                         "Something went wrong",
                         "SYSTEM",
-                        "FATAL"),
+                        "FATAL"
+                ),
                 status
         );
     }
+
+
+
+
+
+
 }
